@@ -1,14 +1,13 @@
 # AI Research & Knowledge Engine — Design Document (v1.0)
 
-Status: **Approved by the owner (standing instruction to proceed with the recommended options), 2026-11-02.**
-Portfolio project 6 of 11. Repository: `codeROCK-IZZY/ai-research-engine`.
+Status: **Design approved; implementation in progress.**
 
-## 0. How this differs from Project 2 (Intelligent Document AI)
+## 0. How this differs from Intelligent Document AI
 
-Project 2 is about *understanding individual documents* (OCR, classification, field extraction,
+Intelligent Document AI is about *understanding individual documents* (OCR, classification, field extraction,
 per-document Q&A). This project is about *knowledge across large collections*:
 
-| Project 2 already does | Project 6 adds |
+| Intelligent Document AI already does | This engine adds |
 |---|---|
 | Hybrid search + cited answers over one user's documents | **Knowledge bases** shared by **workspaces** with roles (owner / editor / reader) |
 | Per-document processing | **Ingestion connectors** (upload, URL fetch with allow-list, bulk ZIP of Markdown/HTML/PDF/TXT) and **re-ingestion on change** |
@@ -17,7 +16,7 @@ per-document Q&A). This project is about *knowledge across large collections*:
 | — | **Knowledge graph** of entities and relations, **topic discovery**, **near-duplicate** detection, **freshness** tracking, **source reliability** indicators |
 | Answer accuracy checks | **Retrieval evaluated separately from answers** (recall@k, MRR, nDCG vs. answer groundedness/citation precision) on a labelled benchmark |
 
-Reused from Projects 1–3: core (config, auth, RBAC, errors, logging), PostgreSQL job queue, CI, Docker, Terraform skeleton, the React scaffold, and Project 2's text extraction and provider interfaces.
+Reused from the AI Predictive Maintenance, Intelligent Document AI and Fraud Detection platforms: core (config, auth, RBAC, errors, logging), PostgreSQL job queue, CI, Docker, Terraform skeleton, the React scaffold, and the Intelligent Document AI platform's text extraction and provider interfaces.
 
 ## 1. Requirements
 
@@ -49,7 +48,7 @@ Reproducible `docker compose up` with a demo corpus; p95 search < 300 ms on the 
 
 ## 2. Architecture
 
-Modular monolith (`api` + `worker`) from one image, PostgreSQL 16 with **pgvector**, as in Projects 1–3.
+Modular monolith (`api` + `worker`) from one image, PostgreSQL 16 with **pgvector**, as in the AI Predictive Maintenance, Intelligent Document AI and Fraud Detection platforms.
 
 ```mermaid
 flowchart LR
@@ -95,7 +94,7 @@ Workspace-scoped authorisation on every query (tested); URL ingestion: allow-lis
 ## 7. Roadmap
 M0 foundation (reuse) · M1 workspaces/KBs/RBAC · M2 ingestion connectors + chunking + hashing · M3 embeddings + indexes · M4 hybrid search + re-rank · M5 RAG with citation post-check · M6 conversations/history · M7 graph, topics, duplicates, freshness, reliability · M8 evaluation benchmark + report · M9 frontend · M10 hardening, Docker, CI, Terraform (not applied), docs.
 
-## 8. Decisions (recommended options taken)
+## 8. Key design decisions
 1. Modular monolith + worker, PostgreSQL + pgvector (no separate vector DB).
 2. Local ONNX embedding and re-ranking models; Claude optional for answers.
 3. Workspace-level RBAC with KB scoping enforced in SQL.
