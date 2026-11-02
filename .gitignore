@@ -14,3 +14,7 @@ var/
 .ruff_cache/
 coverage/
 frontend/dist/
+backend/var/
+.coverage
+coverage.xml
+frontend/tsconfig.tsbuildinfo

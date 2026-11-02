@@ -1,0 +1,62 @@
+# Local development / demo stack.
+#   cp .env.example .env    (then edit the CHANGE_ME values)
+#   docker compose up -d --build
+#   docker compose run --rm api python -m app.cli demo     # synthetic library + demo users
+# Open http://localhost:8080  (log in as alice@example.com / bob@example.com / admin@example.com)
+name: research-engine
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: rke
+      POSTGRES_USER: rke
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rke -d rke"]
+      interval: 5s
+      retries: 10
+    ports: ["127.0.0.1:5434:5432"]
+
+  migrate:
+    build: ./backend
+    command: ["python", "-m", "app.cli", "migrate"]
+    healthcheck: { disable: true }
+    env_file: .env
+    environment: &backend_env
+      RKE_DATABASE_URL: postgresql+psycopg://rke:${POSTGRES_PASSWORD}@db:5432/rke
+      RKE_CORPUS_DIR: /app/var/corpus
+    depends_on:
+      db: { condition: service_healthy }
+
+  api:
+    build: ./backend
+    env_file: .env
+    environment: *backend_env
+    volumes: [files:/app/var]
+    restart: unless-stopped
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    ports: ["127.0.0.1:8001:8000"]
+
+  worker:
+    build: ./backend
+    command: ["python", "-m", "app.cli", "worker"]
+    healthcheck: { disable: true }
+    restart: unless-stopped
+    env_file: .env
+    environment: *backend_env
+    volumes: [files:/app/var]  # shares uploaded files with the API (S3 on AWS)
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    stop_grace_period: 60s
+
+  web:
+    build: ./frontend
+    depends_on: [api]
+    ports: ["127.0.0.1:8080:8080"]
+
+volumes:
+  pgdata:
+  files:

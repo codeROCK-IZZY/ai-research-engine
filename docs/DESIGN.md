@@ -1,6 +1,6 @@
 # AI Research & Knowledge Engine — Design Document (v1.0)
 
-Status: **Design approved; implementation in progress.**
+Status: **Implemented.** Section 10 lists where the implementation differs from this design, and why.
 
 ## 0. How this differs from Intelligent Document AI
 
@@ -100,3 +100,18 @@ M0 foundation (reuse) · M1 workspaces/KBs/RBAC · M2 ingestion connectors + chu
 3. Workspace-level RBAC with KB scoping enforced in SQL.
 4. Synthetic benchmark corpus with labelled questions; retrieval and answer metrics reported separately.
 5. URL connector with strict SSRF protections; no crawling beyond the given URL.
+
+---
+
+## 10. Changes made during implementation
+
+| Area | Design | Built | Why |
+|---|---|---|---|
+| Sources table | separate `sources` table | The proven `documents` / `document_versions` / `chunks` tables, with `kb_id`, source kind, URL, publication and fetch dates | Reuses a tested pipeline; a source *is* a document in a knowledge base |
+| Access control | per-chunk filter | One database view, `readable_documents`, derived from workspace membership; every query joins it | One definition of "may read" for search, Q&A, citations and history |
+| Relevance gate | vector similarity | Cross-encoder relevance of the best passage (≥ 0.2) when re-ranking is on | Measured: answerable questions scored ≥ 0.37, off-topic ones ~0.0; vector similarity refused many paraphrases |
+| Offline answers | best-matching sentences | Headings and title lines excluded; value questions prefer sentences with numbers; cross-encoder only as a tie-breaker | Measured: the MiniLM re-ranker is poorly calibrated on single sentences. Fact accuracy rose from 56% to 77%, false refusals fell from 16% to 1% |
+| Identifier detection | tokens with digits | Ordinals ("95th", "1st") excluded | "95th percentile" was treated as a name and caused refusals |
+| Re-rank candidates | top 20 | top 15 | Hybrid recall@10 is already 100%; fewer candidates halves CPU time |
+| Entities | rule extractor, optional Claude | Concept patterns (acronyms, multi-word names) added to the inherited extractor | Gives the knowledge graph useful nodes without a heavy NLP dependency |
+| Topics | embedding clustering | k-means on mean chunk embeddings computed in PostgreSQL (`avg(embedding)`), TF-IDF labels | No extra ML dependency; deterministic |
