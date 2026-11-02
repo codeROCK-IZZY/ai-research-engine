@@ -309,7 +309,8 @@ ALTER TABLE audit_log RENAME CONSTRAINT audit_log_pkey TO pk_audit_log;
 
 DOWNGRADE_SQL = """
 DROP VIEW IF EXISTS readable_documents;
-DROP TABLE IF EXISTS audit_log, jobs, saved_answers, search_history, citations, messages, conversations, minhash_signatures, entities,
+DROP TABLE IF EXISTS audit_log, jobs, saved_answers, search_history, citations, messages, conversations,
+    minhash_signatures, entities,
     extractions, chunks, pages, document_versions, documents, knowledge_bases, workspace_members, workspaces,
     refresh_tokens, users CASCADE;
 """
